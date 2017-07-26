@@ -54,7 +54,7 @@
  *  06-14-2017 : Updated to fix battery reports showing up in the Recently tab when they shouldn't.
  *  06-19-2017 : Cleaned up code in the resetkwh() section.
  *  06-29-2017 : Rolled back change from 6-12-2017 until I find a better method of checking.
- *  07-25-2017 : First GRH edits towards a GEN2 capable DTH
+ *  07-25-2017 : First GRH edits towards a GEN2 capable DTH, put into Github repo
  *
  */
 metadata {
