@@ -53,7 +53,7 @@
  *  06-12-2017 : Updated code to make sure kWh or kVAh readings from the reader are larger that the previous reading.  There should never be a smaller reading from the previous reading.
  *  06-14-2017 : Updated to fix battery reports showing up in the Recently tab when they shouldn't.
  *  07-31-2017 : GRH - changed to enable long intervals without polling interference, by removing refresh in poll routine.  Misc cleanup of config check code section.
- *
+ *  08:02:2017:  GRH - comment change to see if update version is seen on ST IDE side
  */
 metadata {
 	definition (name: "My Aeon Home Energy Monitor Gen1 TESTVER", namespace: "Drwho099", author: "jscgs350+")
