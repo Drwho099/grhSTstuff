@@ -58,7 +58,7 @@
  *
  */
 metadata {
-	definition (name: "My Aeon Home Energy Monitor Gen2 proto", namespace: "Drwho099", author: "jscgs350+")
+	definition (name: "My Aeon Home Energy Monitor Gen2", namespace: "Drwho099", author: "jscgs350+")
 	{
 		capability "Energy Meter"
 		capability "Power Meter"
