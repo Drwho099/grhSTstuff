@@ -55,7 +55,7 @@
  *  06-19-2017 : Cleaned up code in the resetkwh() section.
  *  06-29-2017 : Rolled back change from 6-12-2017 until I find a better method of checking.
  *  07-25-2017 : First GRH edits towards a GEN2 capable DTH, put into Github repo
- *
+ *  08-12-2017 : Updated poll routine to avoid refresh interference with regular reporting interval
  */
 metadata {
 	definition (name: "My Aeon Home Energy Monitor Gen2", namespace: "Drwho099", author: "jscgs350+")
@@ -345,7 +345,8 @@ def refresh() {
 }
 
 def poll() {
-	refresh()
+	log.debug "poll()"
+	// refresh()              GRH -  skip refresh of device from poll, as they interfered with interval reporting consistency.	refresh()
 }
 
 // PING is used by Device-Watch in attempt to reach the Device
