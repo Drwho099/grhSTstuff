@@ -505,6 +505,9 @@ def configure() {
 	// Accumulate kWh energy when Battery Powered. By default this is disabled to assist saving battery power. (0 == disable, 1 == enable)
 	zwave.configurationV1.configurationSet(parameterNumber: 12, size: 1, scaledConfigurationValue: 1).format(),
 
+	// Enable negative value reporting...
+	zwave.configurationV1.configurationSet(parameterNumber: 2, size: 1, scaledConfigurationValue: 1).format(),
+
 	// Send data based on a time interval (0), or based on a change in wattage (1).	 0 is default and enables parameters 111, 112, and 113. 1 enables parameters 4 and 8.
 	zwave.configurationV1.configurationSet(parameterNumber: 3, size: 1, scaledConfigurationValue: reportType).format(),
 
