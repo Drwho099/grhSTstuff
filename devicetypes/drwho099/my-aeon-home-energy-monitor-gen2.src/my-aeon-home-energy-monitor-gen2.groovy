@@ -56,6 +56,7 @@
  *  06-29-2017 : Rolled back change from 6-12-2017 until I find a better method of checking.
  *  07-25-2017 : First GRH edits towards a GEN2 capable DTH, put into Github repo
  *  08-12-2017 : Updated poll routine to avoid refresh interference with regular reporting interval
+ *  08-14-2017 : Re-added negative power enabling
  */
 metadata {
 	definition (name: "My Aeon Home Energy Monitor Gen2", namespace: "Drwho099", author: "jscgs350+")
@@ -431,70 +432,48 @@ def configure() {
 		log.debug "DO NOT display all events in the Recently tab and the device's event log"
 	}
 
-	if (reportType == 0) {
+	if ((reportType == 0) || (reportType == 1)) {
 		log.debug "Setting reportType to ${reportType} per user request."
-	} else if (reportType == 1) {
-		log.debug "Setting reportType to ${reportType} per user request."
-	}
-	else {
+		} else {
 		def reportType = 1
 		log.debug "Setting reportType to ${reportType} because an invalid value was provided."
 	}
 
-	if (wattsChanged < 0) {
-		def wattsChanged = 50
-		log.debug "Setting wattsChanged to ${wattsChanged} (device default) because an invalid value was provided."
-	} else if (wattsChanged < 32001) {
-		log.debug "Setting wattsChanged to ${wattsChanged} per user request."
-	}
-	else {
+	if ((wattsChanged >= 0) && (wattsChanged <= 32000)) {
+    	log.debug "Setting wattsChanged to ${wattsChanged} per user request."
+		}	else {
 		def wattsChanged = 50
 		log.debug "Setting wattsChanged to ${wattsChanged} (device default) because an invalid value was provided."
 	}
 
-	if (wattsPercent < 0) {
-		def wattsPercent = 10
-		log.debug "Setting wattsPercent to ${wattsPercent} (device default) because an invalid value was provided."
-	} else if (wattsPercent < 100) {
+	if ((wattsPercent >= 0) && (wattsPercent < 100)) {
 		log.debug "Setting wattsPercent to ${wattsPercent} per user request."
-	}
-	else {
+		}	else {
 		def wattsPercent = 10
 		log.debug "Setting wattsPercent to ${wattsPercent} (device default) because an invalid value was provided."
 	}
 
-	if (secondsWatts < 0) {
-		def secondsWatts = 600
-		log.debug "Setting secondsWatts to ${secondsWatts} (device default) because an invalid value was provided."
-	} else if (secondsWatts < 65000) {
+	if ((secondsWatts >= 0) && (secondsWatts <= 65000))  {		// 0 is not really valid per the HEM device spec, but seems to work OK
 		log.debug "Setting secondsWatts to ${secondsWatts} per user request."
-	}
-	else {
-		def secondsWatts = 600
+		} else {
+        def secondsWatts = 600
 		log.debug "Setting secondsWatts to ${secondsWatts} (device default) because an invalid value was provided."
 	}
-
-	if (secondsKwh < 0) {
-		def secondsKwh = 600
-		log.debug "Setting secondsKwh to ${secondsKwh} (device default) because an invalid value was provided."
-	} else if (secondsKwh < 65000) {
+	
+	if ((secondsKwh >= 0) && (secondsKwh <= 65000)) {		// 0 is not really valid per the HEM device spec, but seems to work OK
 		log.debug "Setting secondsKwh to ${secondsKwh} per user request."
-	}
-	else {
+		}	else {
 		def secondsKwh = 600
 		log.debug "Setting secondsKwh to ${secondsKwh} (device default) because an invalid value was provided."
 	}
-
-	if (secondsBattery < 0) {
-		def secondsBattery = 3600
-		log.debug "Setting secondsBattery to ${secondsBattery} (device default) because an invalid value was provided."
-	} else if (secondsBattery < 65000) {
+    
+	if ((secondsBattery >= 0) && (secondsBattery <= 65000)) {		// 0 is not really valid per the HEM device spec, but seems to work OK
 		log.debug "Setting secondsBattery to ${secondsBattery} per user request."
-	}
-	else {
+		} else {
 		def secondsBattery = 3600
 		log.debug "Setting secondsBattery to ${secondsBattery} (device default) because an invalid value was provided."
 	}
+	
 
 	def cmd = delayBetween([
 
