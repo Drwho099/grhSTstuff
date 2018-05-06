@@ -57,7 +57,9 @@
  *  07-25-2017 : First GRH edits towards a GEN2 capable DTH, put into Github repo
  *  08-12-2017 : Updated poll routine to avoid refresh interference with regular reporting interval
  *  08-14-2017 : Re-added negative power enabling
- */
+ *  08-15-2017 : Changed fingerprintID to conform to Gen2 (was Gen1)
+  */
+  
 metadata {
 	definition (name: "My Aeon Home Energy Monitor Gen2", namespace: "Drwho099", author: "jscgs350+")
 	{
@@ -83,7 +85,8 @@ metadata {
 		command "resetmax"
 		command "resetMeter"
 
-		fingerprint deviceId: "0x2101", inClusters: " 0x70,0x31,0x72,0x86,0x32,0x80,0x85,0x60"
+		// fingerprint deviceId: "0x2101", inClusters: " 0x70,0x31,0x72,0x86,0x32,0x80,0x85,0x60"    // GEN1 Value
+        fingerprint deviceId: "0x3101", inClusters: "0x70,0x32,0x60,0x85,0x56,0x72,0x86"
 	}
 
 	// tile definitions
@@ -93,7 +96,8 @@ metadata {
 				attributeState "default", label: '${currentValue}W', icon: "https://raw.githubusercontent.com/constjs/jcdevhandlers/master/img/device-activity-tile@2x.png", backgroundColor: "#79b821"
 			}
 			tileAttribute ("device.batteryStatus", key: "SECONDARY_CONTROL") {
-				attributeState "batteryStatus", label:'${currentValue}', icon:"https://raw.githubusercontent.com/constjs/jcdevhandlers/master/img/Battery-Charge-icon.png"
+				attributeState "batteryStatus", label:'${currentValue}', icon:"https://raw.githubusercontent.com/Drwho099/grhSTstuff/master/img/Wall-Power-icon.png"
+                // icon:"https://raw.githubusercontent.com/constjs/jcdevhandlers/master/img/Battery-Charge-icon.png"
 			}
 		}
 		standardTile("iconTile", "iconTile", inactiveLabel: false, width: 1, height: 1) {
@@ -137,11 +141,14 @@ metadata {
 			defaultValue: false,
 			required: false,
 			displayDuringSetup: true
-		input "displayBatteryLevel", "boolean",
+		/*  GRH - No battery in HEM G2...
+        input "displayBatteryLevel", "boolean",
 			title: "Display battery level on main tile and Recently tab?",
 			defaultValue: true,
 			required: false,
 			displayDuringSetup: true
+            */
+            def displayBatteryLevel = false
 		input "kWhCost", "string",
 			title: "Enter your cost per kWh (or just use the default, or use 0 to not calculate):",
 			defaultValue: 0.16,
@@ -182,12 +189,14 @@ metadata {
 			range: "0..65000",
 			required: false,
 			displayDuringSetup: true
+/*  GRH - No batter in a Gen2 HEM...
 		input "secondsBattery", "number",
 			title: "If the HEM has batteries installed, send battery data every how many seconds? (range 0 - 65,000 seconds)",
 			defaultValue: 900,
 			range: "0..65000",
 			required: false,
 			displayDuringSetup: true
+*/
 		input "decimalPositions", "number",
 			title: "How many decimal positions do you want watts AND kWh to display? (range 0 - 3)",
 			defaultValue: 3,
@@ -223,7 +232,7 @@ def parse(String description) {
 		def batteryStatusmsg = "USB power, batteries at ${device.currentState('battery')?.value}%"
 		sendEvent(name: "batteryStatus", value: batteryStatusmsg, displayed: false)
 	} else {
-		def batteryStatusmsg = "USB power"
+		def batteryStatusmsg = "Wall power"
 		sendEvent(name: "batteryStatus", value: batteryStatusmsg, displayed: false)
 	}
 
@@ -277,7 +286,7 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv1.MeterReport cmd) {
 		}
 		else if (cmd.scale==2) {
 			newValue = cmd.scaledMeterValue								// Remove all rounding
-			if (newValue < 0) {newValue = state.powerValue}				// Don't want to see negative numbers as a valid minimum value (something isn't right with the meter) so use the last known good meter reading
+		//	if (newValue < 0) {newValue = state.powerValue}				// GRH - negative numbers are good things;-... Don't want to see negative numbers as a valid minimum value (something isn't right with the meter) so use the last known good meter reading
 			if (newValue < wattsLimit) {								// don't handle any wildly large readings due to firmware issues
 				if (newValue != state.powerValue) {						// Only process a meter reading if it isn't the same as the last one
 					if (decimalPositions == 2) {
@@ -467,22 +476,22 @@ def configure() {
 		log.debug "Setting secondsKwh to ${secondsKwh} (device default) because an invalid value was provided."
 	}
     
+/*  Fix secondsBattery for HEM G2...
 	if ((secondsBattery >= 0) && (secondsBattery <= 65000)) {		// 0 is not really valid per the HEM device spec, but seems to work OK
 		log.debug "Setting secondsBattery to ${secondsBattery} per user request."
 		} else {
 		def secondsBattery = 3600
 		log.debug "Setting secondsBattery to ${secondsBattery} (device default) because an invalid value was provided."
-	}
+	}	*/
+	def secondsBattery = 65000
+    
 	
 
 	def cmd = delayBetween([
 
 	// Perform a complete factory reset. Use this all by itself and comment out all others below.
 	// Once reset, comment this line out and uncomment the others to go back to normal
-//	zwave.configurationV1.configurationSet(parameterNumber: 255, size: 4, scaledConfigurationValue: 1).format()
-
-	// Accumulate kWh energy when Battery Powered. By default this is disabled to assist saving battery power. (0 == disable, 1 == enable)
-	zwave.configurationV1.configurationSet(parameterNumber: 12, size: 1, scaledConfigurationValue: 1).format(),
+	// zwave.configurationV1.configurationSet(parameterNumber: 255, size: 4, scaledConfigurationValue: 1).format()
 
 	// Enable negative value reporting...
 	zwave.configurationV1.configurationSet(parameterNumber: 2, size: 1, scaledConfigurationValue: 1).format(),
@@ -496,22 +505,23 @@ def configure() {
 	// If parameter 3 is 1, don't send unless watts have changed by 10% <default> for the whole device.
 	zwave.configurationV1.configurationSet(parameterNumber: 8, size: 1, scaledConfigurationValue: wattsPercent).format(),
 
-	// Defines the type of report sent for Reporting Group 1 for the whole device.	1->Battery Report, 4->Meter Report for Watt, 8->Meter Report for kWh
-	zwave.configurationV1.configurationSet(parameterNumber: 101, size: 4, scaledConfigurationValue: 4).format(), //watts
+	// Defines the type of report sent for Reporting Group 1 for the whole device.	1->kWh, 2-> Watt, 4-> Volts, 8-> Amps (DIFFERENT FROM V1)
+	zwave.configurationV1.configurationSet(parameterNumber: 101, size: 4, scaledConfigurationValue: 2).format(), //watts
 
 	// If parameter 3 is 0, report every XX Seconds (for Watts) for Reporting Group 1 for the whole device.
 	zwave.configurationV1.configurationSet(parameterNumber: 111, size: 4, scaledConfigurationValue: secondsWatts).format(),
 
-	// Defines the type of report sent for Reporting Group 2 for the whole device.	1->Battery Report, 4->Meter Report for Watt, 8->Meter Report for kWh
-	zwave.configurationV1.configurationSet(parameterNumber: 102, size: 4, scaledConfigurationValue: 8).format(), //kWh
+	// Defines the type of report sent for Reporting Group 2 for the whole device.	1->kWh, 2-> Watt, 4-> Volts, 8-> Amps (DIFFERENT FROM V1)
+	zwave.configurationV1.configurationSet(parameterNumber: 102, size: 4, scaledConfigurationValue: 1).format(), //kWh
 
 	// If parameter 3 is 0, report every XX seconds (for kWh) for Reporting Group 2 for the whole device.
 	zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: secondsKwh).format(),
 
-	// Defines the type of report sent for Reporting Group 3 for the whole device.	1->Battery Report, 4->Meter Report for Watt, 8->Meter Report for kWh
-	zwave.configurationV1.configurationSet(parameterNumber: 103, size: 4, scaledConfigurationValue: 1).format(), //battery
+	// Defines the type of report sent for Reporting Group 3 for the whole device.	1->kWh, 2-> Watt, 4-> Volts, 8-> Amps (DIFFERENT FROM V1)
+	zwave.configurationV1.configurationSet(parameterNumber: 103, size: 4, scaledConfigurationValue: 0).format(), //was battery in Gen1
 
-	// If parameter 3 is 0, report every XX seconds (for battery) for Reporting Group 2 for the whole device.
+	// If parameter 3 is 0, report every XX seconds (for battery) for Reporting Group 3 for the whole device.  Battery N/A - fix to high number,
+    // even though it seems the report is not sent when the config value in 103 is set to 0.
 	zwave.configurationV1.configurationSet(parameterNumber: 113, size: 4, scaledConfigurationValue: secondsBattery).format()
 
 	])
