@@ -58,6 +58,7 @@
  *  08-12-2017 : Updated poll routine to avoid refresh interference with regular reporting interval
  *  08-14-2017 : Re-added negative power enabling
  *  08-15-2017 : Changed fingerprintID to conform to Gen2 (was Gen1)
+ *  05-08-2018 : Sometimes HEM stops reporting negative #'s, fix seems to be a factory reset followed by a "REFRESH" command using the app.  Maybe.
   */
   
 metadata {
