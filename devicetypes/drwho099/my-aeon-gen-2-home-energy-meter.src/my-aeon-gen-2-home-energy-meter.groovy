@@ -161,7 +161,8 @@ def configure() {
     def configsecondsWatts = settings.secondsWatts as int
     def configsecondsKwh = settings.secondsKwh as int
     log.debug "Configuring HEM gen2 with these settings: Report Type=${configreportType}, Watts Changed=${configwattsChanged}, Watts Percent=${configwattsPercent}, Seconds Watts=${configsecondsWatts}, and Seconds kWh=${configsecondsKwh}"
-	if (isAeotecHomeEnergyMeter())
+	if (isAeotecHomeEnergyMeter()) {
+        log.debug "found AeotecHomeEnergyMeter gen2 meter..."
 		delayBetween([
 				encap(zwave.configurationV1.configurationSet(parameterNumber: 255, size: 4, scaledConfigurationValue: 1)), // Reset the device to the default settings
 				encap(zwave.configurationV1.configurationSet(parameterNumber: 2, size: 1, scaledConfigurationValue: 1)), // Enable negative value reporting...
@@ -171,26 +172,29 @@ def configure() {
 				encap(zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: 900)), // ...every 5 min
 				zwave.configurationV1.configurationSet(parameterNumber: 90, size: 1, scaledConfigurationValue: 1).format(), // enabling automatic reports...
 				zwave.configurationV1.configurationSet(parameterNumber: 91, size: 2, scaledConfigurationValue: 10).format() // ...every 10W change
-		], 500)
-	else if (isQubinoSmartMeter())
+		], 500) }
+	else if (isQubinoSmartMeter()) {
+    	log.debug "found QubinoAeon gen2 meter..."
 		delayBetween([
 				encap(zwave.configurationV1.configurationSet(parameterNumber: 40, size: 1, scaledConfigurationValue: 10)), // Device will report on 10% power change
 				encap(zwave.configurationV1.configurationSet(parameterNumber: 42, size: 2, scaledConfigurationValue: 300)), // report every 5 minutes
-		], 500)
-	else
+		], 500) }
+	else {
     	log.debug "found Aeon gen2 meter..."
 		delayBetween([
         	encap(zwave.configurationV1.configurationSet(parameterNumber: 2, size: 1, scaledConfigurationValue: 1)), // Enable negative value reporting 
     		encap(zwave.configurationV1.configurationSet(parameterNumber: 3, size: 1, scaledConfigurationValue: configreportType)), // Send watts data based on a time interval (0), or based on a change in watts (1). 0 is default. 1 enables parameters 4 and 8.
                 encap(zwave.configurationV1.configurationSet(parameterNumber: 4, size: 2, scaledConfigurationValue: configwattsChanged)), // If parameter 3 is 1, don't send unless watts have changed by xx amount (50 is default) for the whole device.
                 encap(zwave.configurationV1.configurationSet(parameterNumber: 8, size: 1, scaledConfigurationValue: configwattsPercent)), // If parameter 3 is 1, don't send unless watts have changed by xx% (10% is default) for the whole device.
-				encap(zwave.configurationV1.configurationSet(parameterNumber: 101, size: 4, scaledConfigurationValue: 4)),   // combined power in watts
+				// Defines the type of report sent for Reporting Group 1 for the whole device.	1->kWh, 2-> Watt, 4-> Volts, 8-> Amps (GRH: DIFFERENT FROM V1)
+				encap(zwave.configurationV1.configurationSet(parameterNumber: 101, size: 4, scaledConfigurationValue: 2)),   // combined power in watts
 				encap(zwave.configurationV1.configurationSet(parameterNumber: 111, size: 4, scaledConfigurationValue: configsecondsWatts)), // every 1 min (60)
-				encap(zwave.configurationV1.configurationSet(parameterNumber: 102, size: 4, scaledConfigurationValue: 8)),   // combined energy in kWh
+				// Defines the type of report sent for Reporting Group 2 for the whole device.	1->kWh, 2-> Watt, 4-> Volts, 8-> Amps (GRH: DIFFERENT FROM V1)
+				encap(zwave.configurationV1.configurationSet(parameterNumber: 102, size: 4, scaledConfigurationValue: 1)),   // combined energy in kWh
 				encap(zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: configsecondsKwh)), // every 5 min
 				encap(zwave.configurationV1.configurationSet(parameterNumber: 103, size: 4, scaledConfigurationValue: 0)),    // no battery report
 				encap(zwave.configurationV1.configurationSet(parameterNumber: 113, size: 4, scaledConfigurationValue: 900)) // every 5 min
-		])
+		]) }
 }
 
 private encap(physicalgraph.zwave.Command cmd) {
